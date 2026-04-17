@@ -9,31 +9,29 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning data-theme="ink" data-accent="amber" data-density="tight">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        {/* Apply dark mode before first paint to avoid flash */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap"
+          rel="stylesheet"
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){try{
-              var t=localStorage.getItem('wired-theme');
-              if(t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme:dark)').matches))
-                document.documentElement.classList.add('dark');
+              var p=localStorage.getItem(wired-ui-prefs);
+              if(p){var d=JSON.parse(p);document.documentElement.setAttribute(data-theme,d.theme||ink);document.documentElement.setAttribute(data-accent,d.accent||amber);document.documentElement.setAttribute(data-density,d.density||tight);}
             }catch(e){}})();`,
           }}
         />
       </head>
-      <body className="antialiased">
-        {children}
+      <body style={{ background: "var(--bg, #0e0e0f)", color: "var(--fg, #ececed)" }}>
+        <div id="root">{children}</div>
       </body>
     </html>
   );
