@@ -39,7 +39,7 @@ export default function SettingsPage() {
             theme: data.theme || "system",
           };
           setSettings(loaded);
-          setOriginal(loaded);
+          setOriginal(loaded); try { localStorage.setItem("wired-theme", loaded.theme); if(loaded.theme === "dark") { document.documentElement.classList.add("dark"); } else if(loaded.theme === "light") { document.documentElement.classList.remove("dark"); } else { const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches; if(isDark) { document.documentElement.classList.add("dark"); } else { document.documentElement.classList.remove("dark"); } } } catch(e){}
         }
       })
       .catch(() => {})
@@ -178,7 +178,7 @@ export default function SettingsPage() {
             <section style={{ marginBottom: "28px" }}>
               <h2 style={{ fontSize: "12px", fontWeight: "600", color: "var(--text-muted)", margin: "0 0 14px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Appearance</h2>
               <div style={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "12px", padding: "16px" }}>
-                <select value={settings.theme} onChange={e => setSettings(s => ({ ...s, theme: e.target.value }))}
+                <select value={settings.theme} onChange={e => { const t = e.target.value; setSettings(s => ({ ...s, theme: t })); try { localStorage.setItem("wired-theme", t); if(t === "dark") { document.documentElement.classList.add("dark"); } else if(t === "light") { document.documentElement.classList.remove("dark"); } else { const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches; if(isDark) { document.documentElement.classList.add("dark"); } else { document.documentElement.classList.remove("dark"); } } } catch(e){} }}
                   style={{ width: "100%", padding: "9px 12px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", fontSize: "13px", color: "var(--text-primary)", outline: "none", cursor: "pointer" }}>
                   <option value="system">System</option>
                   <option value="light">Light</option>

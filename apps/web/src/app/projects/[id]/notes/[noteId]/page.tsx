@@ -96,7 +96,7 @@ export default function NoteEditorPage({ params }: { params: Promise<{ id: strin
       .catch(() => router.push(`/projects/${projectId}/notes`));
   }, [noteId]);
 
-  const saveNote = useCallback(async (overrides?: Partial<Note>) => {
+  const saveNote = useCallback(async (overrides?: Record<string, unknown>) => {
     if (!note) return;
     setSaving(true);
     try {
