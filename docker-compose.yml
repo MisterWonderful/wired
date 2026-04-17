@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  wired:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: wired:latest
+    container_name: wired
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount a local folder for persistent data
+      - wired-data:/app/data
+      # Mount project folders so Wired can scan them
+      - ~/projects:/projects:ro
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=file:./data/wired.db
+      # Optional: AI configuration
+      # - AI_API_KEY=sk-...
+      # - AI_BASE_URL=https://api.openai.com/v1
+      # - AI_MODEL=gpt-4o-mini
+
+volumes:
+  wired-data:
