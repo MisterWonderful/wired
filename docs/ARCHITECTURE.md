@@ -39,10 +39,10 @@ packages/
 ## Data Flow
 
 ```
-User action → Next.js API Route → Drizzle ORM → SQLite
-                              ↓
-                       @wired packages
-                       (git, ai, scanner, sync)
+User action or desktop trigger → Next.js API Route / scan service → SQLite
+                                                      ↓
+                                               @wired packages
+                                               (git, ai, scanner, sync)
 ```
 
 ## API Design
@@ -56,6 +56,7 @@ All API routes follow REST conventions:
 | GET | `/api/projects/:id` | Get project |
 | PATCH | `/api/projects/:id` | Update project |
 | DELETE | `/api/projects/:id` | Delete project |
+| POST | `/api/projects/:id/scan` | Stable scan trigger endpoint |
 | POST | `/api/projects/:id/scan/local` | Run local scan |
 | POST | `/api/projects/:id/scan/ai` | Run AI scan |
 | GET | `/api/projects/:id/intelligence` | Get snapshots |
@@ -71,5 +72,6 @@ Key tables:
 - `project` — project registry
 - `note` — per-project notes
 - `project_intelligence_snapshot` — AI scan results
+- `project_scan` — persisted local and AI scan summaries
 - `note_sync_state` — sync tracking per note
 - `user_settings` — global settings (single row)

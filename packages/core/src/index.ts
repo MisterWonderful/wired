@@ -80,7 +80,7 @@ export interface Note {
 
 // ─── Scan ─────────────────────────────────────────────────────────────────────
 
-export type ScanType = "local" | "ai_deep";
+export type ScanType = "local" | "ai";
 
 export type ChangeSignificance = "none" | "minor" | "moderate" | "major";
 
@@ -95,6 +95,51 @@ export interface ProjectScan {
   dirtyFilesJson: string;
   resultSummary: string;
   createdAt: string;
+}
+
+export interface ScanTodo {
+  path: string;
+  line: string;
+}
+
+export interface ScanFileSummary {
+  totalScanned: number;
+  topFiles: Array<{
+    path: string;
+    extension: string;
+    sizeBytes: number;
+    relevanceScore?: number;
+  }>;
+}
+
+export interface TriggeredScanGitSummary {
+  branch: string | null;
+  defaultBranch: string | null;
+  isDirty: boolean;
+  dirtyFileCount: number;
+  dirtyFiles: string[];
+  recentCommits: GitCommit[];
+  remoteUrl: string | null;
+}
+
+export interface ScanPersistenceSummary {
+  projectScanStored: boolean;
+  intelligenceSnapshotStored: boolean;
+  websiteReady: boolean;
+}
+
+export interface ScanTriggerResult {
+  scanId: string;
+  snapshotId?: string;
+  projectId: string;
+  scanType: ScanType;
+  scannedAt: string;
+  summary: string;
+  git: TriggeredScanGitSummary;
+  files?: ScanFileSummary;
+  todos?: ScanTodo[];
+  intelligence?: Record<string, unknown>;
+  persistence: ScanPersistenceSummary;
 }
 
 // ─── Project Intelligence Snapshot ────────────────────────────────────────────

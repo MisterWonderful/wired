@@ -3,6 +3,7 @@
 import { use, useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, GitBranch, FileText, Loader2, RefreshCw, MapPin, Zap, TrendingUp } from "lucide-react";
+import type { ScanType } from "@wired/core";
 
 function timeAgo(d: string): string {
   if (!d) return "never";
@@ -62,6 +63,7 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ id:
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [noteCount, setNoteCount] = useState(0);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
 
@@ -85,13 +87,19 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ id:
       .catch(() => {});
   }, [id]);
 
-  async function runScan(type: "local" | "ai") {
+  async function runScan(type: ScanType) {
     setScanning(true);
+    setScanError(null);
     try {
-      const endpoint = type === "ai"
-        ? `/api/projects/${id}/scan/ai`
-        : `/api/projects/${id}/scan/local`;
-      await fetch(endpoint, { method: "POST" });
+      const response = await fetch(`/api/projects/${id}/scan`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ type }),
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(typeof payload?.error === "string" ? payload.error : "Scan failed");
+      }
       // Refresh snapshot after scan
       if (type === "ai") {
         const r = await fetch(`/api/projects/${id}/intelligence`);
@@ -101,7 +109,9 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ id:
       // Refresh project for updated timestamps
       const pr = await fetch(`/api/projects/${id}`);
       if (pr.ok) setProject(await pr.json());
-    } catch { /* ignore */ }
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "Scan failed");
+    }
     finally { setScanning(false); }
   }
 
@@ -165,6 +175,12 @@ export default function ProjectDashboardPage({ params }: { params: Promise<{ id:
           {tags.map((t) => <span key={t} style={{ fontSize: "12px", color: "var(--text-muted)" }}>#{t}</span>)}
           {project.last_scanned_at && <span style={{ fontSize: "12px", color: "var(--text-muted)", marginLeft: "auto" }}>scanned {timeAgo(project.last_scanned_at)}</span>}
         </div>
+
+        {scanError && (
+          <div style={{ marginBottom: "16px", padding: "12px 14px", borderRadius: "10px", border: "1px solid #fecaca", background: "#fef2f2", color: "#991b1b", fontSize: "13px" }}>
+            {scanError}
+          </div>
+        )}
 
         {/* AI Intelligence Card */}
         <div style={{ border: "1px solid var(--border)", borderRadius: "12px", padding: "20px", background: "var(--bg-card)", marginBottom: "16px" }}>
