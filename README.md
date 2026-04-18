@@ -24,7 +24,7 @@
 ### Prerequisites
 
 - Node.js 22+
-- pnpm 9+ (`npm i -g pnpm`)
+- pnpm 9+ via Corepack
 - SQLite (included via `better-sqlite3`)
 
 ### Local Development
@@ -32,13 +32,13 @@
 ```bash
 git clone https://github.com/your-username/wired.git
 cd wired
-pnpm install
+corepack pnpm install
 
 # Seed demo data
-node scripts/seed-demo-data.ts
+corepack pnpm seed
 
 # Start dev server
-pnpm --filter @wired/web dev
+corepack pnpm --filter @wired/web dev
 ```
 
 Open [http://localhost:3008](http://localhost:3008)
@@ -60,8 +60,8 @@ open http://localhost:3000
 
 ```bash
 cd apps/desktop
-pnpm install
-pnpm tauri dev
+corepack pnpm install
+corepack pnpm tauri dev
 ```
 
 ---
@@ -72,7 +72,7 @@ Copy `.env.example` to `.env.local` and configure:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATABASE_URL` | `file:./data/wired.db` | SQLite database path |
+| `DATABASE_URL` | `file:./data/wired.db` | SQLite database path (repo-root `data/wired.db` by default in local dev) |
 | `PORT` | `3000` | Server port |
 | `AI_API_KEY` | — | OpenAI-compatible API key |
 | `AI_BASE_URL` | `https://api.openai.com/v1` | AI provider base URL |

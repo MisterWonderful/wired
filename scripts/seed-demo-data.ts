@@ -1,17 +1,15 @@
-// Seed script - uses direct better-sqlite3 for simplicity
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { ensureDatabase, resolveDatabasePath } from "../packages/db/src/bootstrap.ts";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
-const DB_PATH = process.env.DATABASE_URL?.replace("file:", "") || path.join(rootDir, "data", "wired.db");
+const DB_PATH = resolveDatabasePath({
+  databaseUrl: process.env.DATABASE_URL,
+  rootDir,
+});
 
-// Ensure data directory exists
-import { mkdirSync } from "fs";
-mkdirSync(path.dirname(DB_PATH), { recursive: true });
-
-const db = new Database(DB_PATH);
+const db = ensureDatabase(DB_PATH);
 
 // Simple ID generator (compatible with our wired core)
 function createId(): string {
@@ -22,64 +20,6 @@ async function seed() {
   console.log("Seeding demo data...");
   console.log(`Database: ${DB_PATH}`);
 
-  // Create tables if they don't exist
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS user_settings (
-      id TEXT PRIMARY KEY,
-      ai_provider TEXT DEFAULT 'openai',
-      ai_base_url TEXT DEFAULT 'https://api.openai.com/v1',
-      ai_model TEXT DEFAULT 'gpt-4o-mini',
-      ai_api_key TEXT,
-      github_token TEXT,
-      default_sync_folder TEXT DEFAULT '.wired/notes',
-      default_sync_mode TEXT DEFAULT 'write_only',
-      theme TEXT DEFAULT 'system',
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now'))
-    );
-
-    CREATE TABLE IF NOT EXISTS project (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      slug TEXT UNIQUE NOT NULL,
-      description TEXT,
-      source_type TEXT DEFAULT 'manual',
-      local_path TEXT,
-      remote_url TEXT,
-      github_owner TEXT,
-      github_repo TEXT,
-      default_branch TEXT,
-      current_branch TEXT,
-      status TEXT DEFAULT 'active',
-      tags TEXT DEFAULT '[]',
-      accent_color TEXT,
-      pinned INTEGER DEFAULT 0,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      last_scanned_at TEXT,
-      last_ai_scanned_at TEXT,
-      last_note_sync_at TEXT,
-      last_summary_generated_at TEXT
-    );
-
-    CREATE TABLE IF NOT EXISTS note (
-      id TEXT PRIMARY KEY,
-      project_id TEXT NOT NULL,
-      title TEXT NOT NULL,
-      body_markdown TEXT DEFAULT '',
-      enhanced_body_markdown TEXT,
-      note_type TEXT DEFAULT 'quick_note',
-      tags TEXT DEFAULT '[]',
-      status TEXT DEFAULT 'draft',
-      pinned INTEGER DEFAULT 0,
-      source TEXT DEFAULT 'web',
-      sync_target_path TEXT,
-      created_at TEXT DEFAULT (datetime('now')),
-      updated_at TEXT DEFAULT (datetime('now')),
-      synced_at TEXT,
-      FOREIGN KEY (project_id) REFERENCES project(id) ON DELETE CASCADE
-    );
-  `);
   console.log("Tables created/verified");
 
   // Create demo projects

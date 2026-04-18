@@ -1,9 +1,9 @@
 import { readFileSync, readdirSync, statSync } from "fs";
-import { join, extname, basename } from "path";
+import { join, extname, basename, resolve } from "path";
 
 // File scan candidate type
 export interface FileScanCandidate {
-  path: string; sizeBytes: number; extension: string;
+  path: string; absolutePath: string; sizeBytes: number; extension: string;
   lastModifiedAt?: string; changedSinceLastScan: boolean; mentionedInCommit: boolean;
   containsTodo: boolean; isConfig: boolean; isReadmeOrDoc: boolean;
   isEntryPoint: boolean; isTest: boolean; isIgnored: boolean;
@@ -37,6 +37,8 @@ function scoreFile(c: FileScanCandidate): { score: number; reasons: string[] } {
 
 export function scanDirectory(dirPath: string, maxFiles = 200, maxSizeBytes = 100_000): FileScanCandidate[] {
   const candidates: FileScanCandidate[] = [];
+  const rootDir = resolve(dirPath);
+
   function walk(dir: string) {
     if (candidates.length >= maxFiles) return;
     try {
@@ -50,14 +52,14 @@ export function scanDirectory(dirPath: string, maxFiles = 200, maxSizeBytes = 10
             if (!IGNORED_DIRS.includes(entry) && !entry.startsWith(".")) walk(fullPath);
           } else if (stat.isFile()) {
             const ext = extname(entry).toLowerCase();
-            const relativePath = fullPath.replace(dir + "/", "");
+            const relativePath = fullPath.slice(rootDir.length + 1);
             const baseName = basename(entry);
             const size = stat.size;
             let content = "";
             if (size < maxSizeBytes) { try { content = readFileSync(fullPath, "utf-8").slice(0, 8000); } catch {} }
-            const todoRegex = /\\bTODO\\b|\\bFIXME\\b|\\bXXX\\b/i;
+            const todoRegex = /\bTODO\b|\bFIXME\b|\bXXX\b/i;
             candidates.push({
-              path: relativePath, sizeBytes: size, extension: ext,
+              path: relativePath, absolutePath: fullPath, sizeBytes: size, extension: ext,
               lastModifiedAt: stat.mtime.toISOString(),
               changedSinceLastScan: false, mentionedInCommit: false,
               containsTodo: todoRegex.test(content),
@@ -72,7 +74,7 @@ export function scanDirectory(dirPath: string, maxFiles = 200, maxSizeBytes = 10
       }
     } catch {}
   }
-  walk(dirPath);
+  walk(rootDir);
   return candidates;
 }
 
@@ -89,7 +91,7 @@ export function buildContextBundle(ranked: RankedFileCandidate[], maxTokens = 12
     if (file.sizeBytes > 100_000) continue;
     if (parts.length >= 75) break;
     try {
-      const content = readFileSync(file.path, "utf-8");
+      const content = readFileSync(file.absolutePath, "utf-8");
       const fileTokens = Math.ceil(content.length / 4);
       if (tokenCount + fileTokens > maxTokens) break;
       const ext = file.extension.slice(1) || "text";

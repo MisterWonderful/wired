@@ -236,6 +236,7 @@ export interface ProjectScanSettings {
 
 export interface FileScanCandidate {
   path: string;
+  absolutePath: string;
   sizeBytes: number;
   extension: string;
   lastModifiedAt?: string;

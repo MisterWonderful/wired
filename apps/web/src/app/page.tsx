@@ -820,13 +820,11 @@ function InfoTab({ p }: { p: Project }) {
 
 function ProjectDashboard({ project: p, notes }: { project: Project; notes: Note[] }) {
   const [tab, setTab] = useState("overview");
-  const [scanning, setScanning] = useState(false);
-  const runScan = () => { setScanning(true); setTimeout(() => setScanning(false), 1400); };
   return (
     <div>
       <Topbar title={p.name}
         subtitle={<span style={{ display: "flex", gap: 10, alignItems: "center" }}><SourceIcon source={p.source_type} /><span className="mono" style={{ fontSize: 12 }}>{p.source_label ?? p.source_type}</span><span style={{ color: "var(--fg-dim)" }}>.</span><Icon name="git" size={11} /><span className="mono" style={{ fontSize: 12 }}>{p.branch ?? "main"}</span></span>}
-        right={<div style={{ display: "flex", gap: 8 }}><button style={{ padding: "8px 12px", border: "1px solid var(--hairline)", borderRadius: 4, fontSize: 12, color: "var(--fg-muted)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="refresh" size={11} /> Local scan</button><button onClick={runScan} style={{ padding: "8px 14px", background: "var(--fg)", color: "var(--bg)", borderRadius: 4, fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}><Icon name="sparkle" size={11} /> {scanning ? "Scanning..." : "AI scan"}</button></div>} />
+        right={<div style={{ display: "flex", gap: 8 }}><button style={{ padding: "8px 12px", border: "1px solid var(--hairline)", borderRadius: 4, fontSize: 12, color: "var(--fg-muted)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="refresh" size={11} /> Local scan</button><button disabled title="This overview shell does not run scans directly." style={{ padding: "8px 14px", background: "var(--panel-2)", color: "var(--fg-dim)", borderRadius: 4, fontSize: 12, fontWeight: 500, display: "flex", alignItems: "center", gap: 6, cursor: "not-allowed" }}><Icon name="sparkle" size={11} /> AI scan unavailable</button></div>} />
       <div style={{ display: "flex", gap: 0, padding: "0 40px", borderBottom: "1px solid var(--hairline)", background: "var(--bg)" }}>
         {([["overview","Overview"],["intel","Intelligence"],["notes","Notes",notes.length],["activity","Activity"],["info","Info"]] as [string,string,number?][]).map(([k, label, count]) => (
           <button key={k} onClick={() => setTab(k)} style={{ padding: "14px 16px 12px", fontSize: 12.5, color: tab === k ? "var(--fg)" : "var(--fg-muted)", borderBottom: tab === k ? "1px solid var(--fg)" : "1px solid transparent", marginBottom: -1, display: "flex", alignItems: "center", gap: 6 }}>{label}{count !== undefined && <span className="mono" style={{ fontSize: 10, color: "var(--fg-dim)" }}>{count}</span>}</button>
@@ -1081,11 +1079,12 @@ export default function App() {
 
   const enrichedProject = useMemo(() => {
     if (!project) return null;
-    if (project.readiness === undefined) {
-      const r = Math.floor(Math.random() * 40) + 40;
-      return { ...project, readiness: r, completeness: Math.floor(r * 0.9), confidence: Math.floor(r * 1.1) };
-    }
-    return project;
+    return {
+      ...project,
+      readiness: project.readiness ?? 0,
+      completeness: project.completeness ?? 0,
+      confidence: project.confidence ?? 0,
+    };
   }, [project]);
 
   if (loading) {

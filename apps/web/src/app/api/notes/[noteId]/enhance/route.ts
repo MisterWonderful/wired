@@ -63,14 +63,10 @@ export async function POST(
     const aiModel = process.env.AI_MODEL || "gpt-4o-mini";
 
     if (!apiKey) {
-      // No AI configured — return mock enhanced text
-      const mockEnhanced = `## ${note.title}\n\n${note.body_markdown}\n\n---\n*[Enhanced: ${mode.replace("_", " ")} — AI not configured, this is a placeholder]*`;
-      return NextResponse.json({
-        enhanced: mockEnhanced,
-        mode,
-        noteId,
-        warning: "AI not configured. Set AI_API_KEY to enable real AI enhancement.",
-      });
+      return NextResponse.json(
+        { error: "AI not configured. Set AI_API_KEY to enable note enhancement." },
+        { status: 400 },
+      );
     }
 
     const systemPrompt = `You are a senior technical writer and developer assistant. You help users clean up, expand, and organize their project notes. Always preserve the user's original intent and meaning. Never invent facts about the project. Return clean markdown.`;

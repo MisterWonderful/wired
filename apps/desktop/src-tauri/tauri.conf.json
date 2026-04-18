@@ -4,10 +4,10 @@
   "version": "0.1.0",
   "identifier": "ai.wired.app",
   "build": {
-    "frontendDist": "../web/out",
-    "devUrl": "http://localhost:3008",
-    "beforeDevCommand": "pnpm --filter @wired/web dev",
-    "beforeBuildCommand": "pnpm --filter @wired/web build"
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "corepack pnpm dev",
+    "beforeBuildCommand": "corepack pnpm build"
   },
   "app": {
     "windows": [

@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "pnpm --parallel dev",
-    "build": "pnpm -r build",
-    "lint": "pnpm -r lint",
-    "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test",
-    "db:generate": "pnpm --filter @wired/db generate",
-    "db:migrate": "pnpm --filter @wired/db migrate",
-    "db:push": "pnpm --filter @wired/db push",
+    "dev": "corepack pnpm --parallel dev",
+    "build": "corepack pnpm -r build",
+    "lint": "corepack pnpm -r lint",
+    "typecheck": "corepack pnpm -r typecheck",
+    "test": "corepack pnpm -r test",
+    "db:generate": "corepack pnpm --filter @wired/db generate",
+    "db:migrate": "corepack pnpm --filter @wired/db migrate",
+    "db:push": "corepack pnpm --filter @wired/db push",
     "seed": "tsx scripts/seed-demo-data.ts"
   },
   "devDependencies": {

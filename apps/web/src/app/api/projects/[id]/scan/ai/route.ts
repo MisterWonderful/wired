@@ -157,79 +157,52 @@ ${fileContexts.join("\n")}
     const aiBaseUrl = process.env.AI_BASE_URL || "https://api.openai.com/v1";
     const aiModel = process.env.AI_MODEL || "gpt-4o-mini";
 
-    let intelligence: Record<string, unknown>;
-
     if (!apiKey) {
-      // Return mock response if no AI configured
-      intelligence = {
-        projectDescription: project.description || `${project.name} — a software project`,
-        projectType: "Unknown",
-        techStack: [],
-        architectureSummary: "No AI configured — set AI_API_KEY to enable deep scans.",
-        currentStateSummary: "Local scan complete. AI scan requires API key.",
-        whereLeftOff: "Run an AI scan with a valid API key to generate insights.",
-        recentProgress: gitInfo.recentCommits.slice(0, 3).map((c) => c.message),
-        activeWorkAreas: gitInfo.dirtyFiles.length > 0 ? ["Files with uncommitted changes"] : [],
-        releaseReadinessPercent: 0,
-        completenessPercent: 0,
-        confidencePercent: 0,
-        releaseReadinessExplanation: "AI not configured.",
-        completenessExplanation: "AI not configured.",
-        readinessScoreBreakdown: {
-          coreFunctionality: 0, buildAndRunConfidence: 0, testCoverage: 0,
-          documentation: 0, errorHandling: 0, securityBasics: 0,
-          deploymentReadiness: 0, uiPolish: 0, maintainability: 0,
-        },
-        blockers: [],
-        risks: [],
-        suggestedNextTasks: [],
-        openQuestions: ["Set AI_API_KEY to enable AI project intelligence."],
-        detectedFeatures: [],
-        incompleteFeatures: [],
-        testingStatus: { hasTests: false, testFrameworks: [], lastKnownTestResult: "unknown", coverageKnown: false, summary: "No data", missingTestAreas: [] },
-        documentationStatus: { hasReadme: false, hasDocsFolder: false, summary: "No data", missingDocs: [] },
-      };
-    } else {
-      // Call AI
-      const response = await fetch(`${aiBaseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model: aiModel,
-          messages: [
-            { role: "system", content: SCAN_SYSTEM_PROMPT },
-            { role: "user", content: `${SCAN_USER_PROMPT}\n\n${contextBundle}` },
-          ],
-          max_tokens: 4096,
-          temperature: 0.3,
-        }),
-      });
+      return NextResponse.json(
+        { error: "AI not configured. Set AI_API_KEY to enable project intelligence scans." },
+        { status: 400 },
+      );
+    }
 
-      if (!response.ok) {
-        const error = await response.text();
-        console.error("AI scan error:", error);
-        return NextResponse.json({ error: "AI scan failed", details: error }, { status: 502 });
-      }
+    // Call AI
+    const response = await fetch(`${aiBaseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: aiModel,
+        messages: [
+          { role: "system", content: SCAN_SYSTEM_PROMPT },
+          { role: "user", content: `${SCAN_USER_PROMPT}\n\n${contextBundle}` },
+        ],
+        max_tokens: 4096,
+        temperature: 0.3,
+      }),
+    });
 
-      const data = (await response.json()) as {
-        choices: { message: { content: string } }[];
-      };
-      const raw = data.choices[0]?.message?.content || "{}";
+    if (!response.ok) {
+      const error = await response.text();
+      console.error("AI scan error:", error);
+      return NextResponse.json({ error: "AI scan failed", details: error }, { status: 502 });
+    }
 
-      // Parse JSON from response
-      const jsonMatch = raw.match(/\{[\s\S]*\}/);
-      if (!jsonMatch) {
-        return NextResponse.json({ error: "AI returned invalid response" }, { status: 502 });
-      }
+    const data = (await response.json()) as {
+      choices: { message: { content: string } }[];
+    };
+    const raw = data.choices[0]?.message?.content || "{}";
 
-      try {
-        intelligence = JSON.parse(jsonMatch[0]);
-      } catch {
-        return NextResponse.json({ error: "Failed to parse AI response" }, { status: 502 });
-      }
+    const jsonMatch = raw.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return NextResponse.json({ error: "AI returned invalid response" }, { status: 502 });
+    }
+
+    let intelligence: Record<string, unknown>;
+    try {
+      intelligence = JSON.parse(jsonMatch[0]);
+    } catch {
+      return NextResponse.json({ error: "Failed to parse AI response" }, { status: 502 });
     }
 
     // Store snapshot
@@ -304,7 +277,6 @@ ${fileContexts.join("\n")}
       projectId: id,
       scannedAt: now,
       intelligence,
-      warning: !apiKey ? "AI not configured — using mock data. Set AI_API_KEY for real AI scans." : undefined,
     });
   } catch (error) {
     console.error("POST /api/projects/[id]/scan/ai error:", error);

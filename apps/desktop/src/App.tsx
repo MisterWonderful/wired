@@ -11,12 +11,15 @@ interface Project {
 function App() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost:3008/api/projects")
-      .then(r => r.json())
-      .then(data => { if (Array.isArray(data)) setProjects(data); })
-      .catch(console.error);
+    invoke<Project[]>("list_projects")
+      .then(setProjects)
+      .catch((error) => {
+        console.error("Failed to load projects:", error);
+        setLoadError("Unable to load local projects");
+      });
   }, []);
 
   async function pickFolder() {
@@ -47,6 +50,7 @@ function App() {
 
       <section>
         <h2 style={{ fontSize: "14px", fontWeight: "600", color: "#6b6b6b", margin: "0 0 12px" }}>Projects</h2>
+        {loadError && <p style={{ fontSize: "12px", color: "#b42318", margin: "0 0 12px" }}>{loadError}</p>}
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {projects.map(p => (
             <div key={p.id} style={{ padding: "12px 16px", border: "1px solid #e5e5e5", borderRadius: "10px" }}>
@@ -54,6 +58,11 @@ function App() {
               {p.local_path && <div style={{ fontSize: "12px", color: "#a0a0a0", marginTop: "2px", fontFamily: "monospace" }}>{p.local_path}</div>}
             </div>
           ))}
+          {projects.length === 0 && !loadError && (
+            <div style={{ padding: "12px 16px", border: "1px dashed #d0d5dd", borderRadius: "10px", fontSize: "13px", color: "#667085" }}>
+              No local projects found yet.
+            </div>
+          )}
         </div>
       </section>
     </div>

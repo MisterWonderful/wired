@@ -1,10 +1,11 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import * as schema from "./index.js";
-import { join } from "path";
+import { ensureDatabase, resolveDatabasePath } from "./index.js";
 
-const DB_PATH = process.env.DATABASE_URL?.replace("file:", "").replace("sqlite:", "") 
-  || join(process.cwd(), "..", "data", "wired.db");
+const DB_PATH = resolveDatabasePath({
+  rootDir: process.cwd(),
+});
 
-export const db = drizzle(new Database(DB_PATH), { schema });
+export const db = drizzle(ensureDatabase(DB_PATH), { schema });
 export type DB = typeof db;

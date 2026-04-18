@@ -1,18 +1,21 @@
 import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
+import { ensureDatabase, resolveDatabasePath } from "@wired/db";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DB_PATH = process.env.DATABASE_URL?.replace("file:", "") ||
-  path.resolve(__dirname, "..", "..", "data", "wired.db");
+const WEB_ROOT = path.resolve(__dirname, "..", "..", "..");
+const REPO_ROOT = path.resolve(WEB_ROOT, "..", "..");
+const DB_PATH = resolveDatabasePath({
+  databaseUrl: process.env.DATABASE_URL,
+  rootDir: REPO_ROOT,
+});
 
 let _db: Database.Database | null = null;
 
 export function getDb(): Database.Database {
   if (!_db) {
-    _db = new Database(DB_PATH);
-    _db.pragma("journal_mode = WAL");
-    _db.pragma("foreign_keys = ON");
+    _db = ensureDatabase(DB_PATH);
   }
   return _db;
 }

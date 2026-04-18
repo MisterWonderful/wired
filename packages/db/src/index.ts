@@ -10,7 +10,7 @@ export const userSettings = sqliteTable("user_settings", {
   aiModel: text("ai_model").default("gpt-4o-mini"),
   aiApiKey: text("ai_api_key").default(""),
   githubToken: text("github_token").default(""),
-  defaultNoteSyncFolder: text("default_note_sync_folder").default(".wired/notes"),
+  defaultSyncFolder: text("default_sync_folder").default(".wired/notes"),
   defaultSyncMode: text("default_sync_mode").default("write_only"),
   theme: text("theme").default("system"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
@@ -192,3 +192,5 @@ export const activityEvents = sqliteTable("activity_event", {
   metadataJson: text("metadata_json").default("{}"),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
+
+export { ensureDatabase, resolveDatabasePath } from "./bootstrap";

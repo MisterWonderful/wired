@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Check, Eye, EyeOff } from "lucide-react";
+import type { PublicSettings } from "@/lib/settings";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState({
@@ -16,6 +17,10 @@ export default function SettingsPage() {
     theme: "system",
   });
   const [original, setOriginal] = useState({ ...settings });
+  const [hasAiApiKey, setHasAiApiKey] = useState(false);
+  const [hasGithubToken, setHasGithubToken] = useState(false);
+  const [aiApiKeyDirty, setAiApiKeyDirty] = useState(false);
+  const [githubTokenDirty, setGithubTokenDirty] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -28,18 +33,24 @@ export default function SettingsPage() {
       .then(r => r.json())
       .then(data => {
         if (data && typeof data === "object") {
+          const publicSettings = data as PublicSettings;
           const loaded = {
-            aiProvider: data.ai_provider || "openai",
-            aiBaseUrl: data.ai_base_url || "https://api.openai.com/v1",
-            aiModel: data.ai_model || "gpt-4o-mini",
-            aiApiKey: data.ai_api_key || "",
-            githubToken: data.github_token || "",
-            defaultSyncFolder: data.default_sync_folder || ".wired/notes",
-            defaultSyncMode: data.default_sync_mode || "write_only",
-            theme: data.theme || "system",
+            aiProvider: publicSettings.ai_provider || "openai",
+            aiBaseUrl: publicSettings.ai_base_url || "https://api.openai.com/v1",
+            aiModel: publicSettings.ai_model || "gpt-4o-mini",
+            aiApiKey: "",
+            githubToken: "",
+            defaultSyncFolder: publicSettings.default_sync_folder || ".wired/notes",
+            defaultSyncMode: publicSettings.default_sync_mode || "write_only",
+            theme: publicSettings.theme || "system",
           };
           setSettings(loaded);
-          setOriginal(loaded); try { localStorage.setItem("wired-theme", loaded.theme); if(loaded.theme === "dark") { document.documentElement.classList.add("dark"); } else if(loaded.theme === "light") { document.documentElement.classList.remove("dark"); } else { const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches; if(isDark) { document.documentElement.classList.add("dark"); } else { document.documentElement.classList.remove("dark"); } } } catch(e){}
+          setOriginal(loaded);
+          setHasAiApiKey(publicSettings.has_ai_api_key);
+          setHasGithubToken(publicSettings.has_github_token);
+          setAiApiKeyDirty(false);
+          setGithubTokenDirty(false);
+          try { localStorage.setItem("wired-theme", loaded.theme); if(loaded.theme === "dark") { document.documentElement.classList.add("dark"); } else if(loaded.theme === "light") { document.documentElement.classList.remove("dark"); } else { const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches; if(isDark) { document.documentElement.classList.add("dark"); } else { document.documentElement.classList.remove("dark"); } } } catch(e){}
         }
       })
       .catch(() => {})
@@ -59,15 +70,26 @@ export default function SettingsPage() {
           ai_provider: settings.aiProvider,
           ai_base_url: settings.aiBaseUrl,
           ai_model: settings.aiModel,
-          ai_api_key: settings.aiApiKey || null,
-          github_token: settings.githubToken || null,
+          ...(aiApiKeyDirty ? { ai_api_key: settings.aiApiKey } : {}),
+          ...(githubTokenDirty ? { github_token: settings.githubToken } : {}),
           default_sync_folder: settings.defaultSyncFolder,
           default_sync_mode: settings.defaultSyncMode,
           theme: settings.theme,
         }),
       });
       if (!res.ok) throw new Error(await res.text());
-      setOriginal(settings);
+      const savedSettings = await res.json() as PublicSettings;
+      const persistedState = {
+        ...settings,
+        aiApiKey: "",
+        githubToken: "",
+      };
+      setOriginal(persistedState);
+      setHasAiApiKey(savedSettings.has_ai_api_key);
+      setHasGithubToken(savedSettings.has_github_token);
+      setAiApiKeyDirty(false);
+      setGithubTokenDirty(false);
+      setSettings(persistedState);
       setSaved(true);
       setTimeout(() => setSaved(false), 2500);
     } catch (e: any) {
@@ -126,13 +148,13 @@ export default function SettingsPage() {
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "var(--text-secondary)", marginBottom: "6px" }}>API Key</label>
                   <div style={{ position: "relative" }}>
-                    <input type={showAiKey ? "text" : "password"} value={settings.aiApiKey} onChange={e => setSettings(s => ({ ...s, aiApiKey: e.target.value }))} placeholder="sk-…"
+                    <input type={showAiKey ? "text" : "password"} value={settings.aiApiKey} onChange={e => { setAiApiKeyDirty(true); setSettings(s => ({ ...s, aiApiKey: e.target.value })); }} placeholder={hasAiApiKey ? "Stored locally. Enter a new key to replace, or clear to remove." : "sk-…"}
                       style={{ width: "100%", padding: "9px 36px 9px 12px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", fontSize: "13px", color: "var(--text-primary)", outline: "none", fontFamily: "monospace", boxSizing: "border-box" }} />
                     <button onClick={() => setShowAiKey(!showAiKey)} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex" }}>
                       {showAiKey ? <EyeOff size={13} style={{ color: "var(--text-muted)" }} /> : <Eye size={13} style={{ color: "var(--text-muted)" }} />}
                     </button>
                   </div>
-                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>Stored locally. Never synced.</p>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>{hasAiApiKey ? "A key is stored locally. Saving an empty value removes it." : "Stored locally. Never synced."}</p>
                 </div>
               </div>
             </section>
@@ -143,13 +165,13 @@ export default function SettingsPage() {
                 <div>
                   <label style={{ display: "block", fontSize: "12px", fontWeight: "500", color: "var(--text-secondary)", marginBottom: "6px" }}>Personal Access Token</label>
                   <div style={{ position: "relative" }}>
-                    <input type={showGhToken ? "text" : "password"} value={settings.githubToken} onChange={e => setSettings(s => ({ ...s, githubToken: e.target.value }))} placeholder="ghp_…"
+                    <input type={showGhToken ? "text" : "password"} value={settings.githubToken} onChange={e => { setGithubTokenDirty(true); setSettings(s => ({ ...s, githubToken: e.target.value })); }} placeholder={hasGithubToken ? "Stored locally. Enter a new token to replace, or clear to remove." : "ghp_…"}
                       style={{ width: "100%", padding: "9px 36px 9px 12px", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", fontSize: "13px", color: "var(--text-primary)", outline: "none", fontFamily: "monospace", boxSizing: "border-box" }} />
                     <button onClick={() => setShowGhToken(!showGhToken)} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", padding: "4px", display: "flex" }}>
                       {showGhToken ? <EyeOff size={13} style={{ color: "var(--text-muted)" }}/> : <Eye size={13} style={{ color: "var(--text-muted)" }} />}
                     </button>
                   </div>
-                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>Used to fetch repo metadata. Stored locally.</p>
+                  <p style={{ fontSize: "11px", color: "var(--text-muted)", marginTop: "6px" }}>{hasGithubToken ? "A token is stored locally. Saving an empty value removes it." : "Used to fetch repo metadata. Stored locally."}</p>
                 </div>
               </div>
             </section>
